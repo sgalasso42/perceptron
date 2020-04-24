@@ -8,7 +8,7 @@ use rand::Rng;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
-use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
+use piston::input::{RenderArgs, RenderEvent};
 use piston::window::WindowSettings;
 
 /* Display -------------------------------------------------------- */
@@ -24,10 +24,10 @@ impl Display {
         }
     }
 
-    fn clear(&mut self, args: &RenderArgs, points: [RandomPoint; 100]) {
+    fn clear(&mut self, args: &RenderArgs) {
         const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 
-        self.gl.draw(args.viewport(), |c, gl| {
+        self.gl.draw(args.viewport(), |_c, gl| {
             graphics::clear(WHITE, gl);
         });
     }
@@ -114,40 +114,35 @@ fn main() {
     let mut display = Display::new(opengl);
 
     let mut p: Perceptron = Perceptron::new();
-    let mut rdPoints: [RandomPoint; 100] = [RandomPoint {x: 0.0, y: 0.0, label: 0}; 100];
+    let mut rd_points: [RandomPoint; 100] = [RandomPoint {x: 0.0, y: 0.0, label: 0}; 100];
 
-    for i in 0..rdPoints.len() {
-        rdPoints[i] = RandomPoint::new(500.0);
-        eprintln!("{} {}", rdPoints[i].x, rdPoints[i].y);
+    for i in 0..rd_points.len() {
+        rd_points[i] = RandomPoint::new(500.0);
     }
 
-    let mut trainCount = 0;
+    let mut train_count = 0;
     let mut events = Events::new(EventSettings::new());
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
-            display.clear(&args, rdPoints);
+            display.clear(&args);
 
             display.render_line(&args);
 
-            for point in rdPoints.iter() {
+            for point in rd_points.iter() {
                 display.render_point(&args, point.x, point.y, 10.0, [0.0, 0.0, 0.0, 1.0]);
             }
 
-            for point in rdPoints.iter() {
+            for point in rd_points.iter() {
                 let inputs: [f64; 2] = [point.x, point.y];
                 let target: i32 = point.label;
                 p.train(inputs, target);
 
                 let guess: i32 = p.guess(inputs);
-                if (guess == target) {
-                    display.render_point(&args, point.x, point.y, 5.0, [0.0, 1.0, 0.0, 1.0]);
-                } else {
-                    display.render_point(&args, point.x, point.y, 5.0, [1.0, 0.0, 0.0, 1.0]);
-                }
+                let color = if guess == target { [0.0, 1.0, 0.0, 1.0] } else { [1.0, 0.0, 0.0, 1.0] };
+                display.render_point(&args, point.x, point.y, 5.0, color);
             }
-
-            eprintln!("Nb trains: {}", trainCount);
-            trainCount += 1;
+            eprintln!("Nb trains: {}", train_count);
+            train_count += 1;
         }
     }
 }
