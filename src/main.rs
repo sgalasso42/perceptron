@@ -70,25 +70,20 @@ impl RandomPoint {
 /* Perceptron ----------------------------------------------------- */
 
 struct Perceptron {
-    weights: [f64; 2],
+    weights: Vec<f64>,
     lr: f64
 }
 
 impl Perceptron {
     fn new() -> Perceptron {
-        let mut p: Perceptron = Perceptron {
-            weights: [0.0; 2],
+        Perceptron {
+            weights: (0..2).map(|_x| rand::thread_rng().gen_range(-1.0, 1.0)).collect(),
             lr: 0.1
-        };
-
-        for i in 0..p.weights.len() {
-            p.weights[i] = rand::thread_rng().gen_range(-1.0, 1.0);
         }
-        return p;
     }
 
     fn guess(&self, inputs: [f64; 2]) -> i32 {
-        let mut sum: f64 = 0.0 ;
+        let mut sum: f64 = 0.0;
 
         for i in 0..self.weights.len() {
             sum += inputs[i] * self.weights[i];
@@ -114,25 +109,18 @@ fn main() {
     let mut display = Display::new(opengl);
 
     let mut p: Perceptron = Perceptron::new();
-    let mut rd_points: [RandomPoint; 100] = [RandomPoint {x: 0.0, y: 0.0, label: 0}; 100];
-
-    for i in 0..rd_points.len() {
-        rd_points[i] = RandomPoint::new(500.0);
-    }
+    let rd_points: Vec<RandomPoint> = (0..100).map(|_x| RandomPoint::new(500.0)).collect();
 
     let mut train_count = 0;
     let mut events = Events::new(EventSettings::new());
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
             display.clear(&args);
-
             display.render_line(&args);
 
             for point in rd_points.iter() {
                 display.render_point(&args, point.x, point.y, 10.0, [0.0, 0.0, 0.0, 1.0]);
-            }
 
-            for point in rd_points.iter() {
                 let inputs: [f64; 2] = [point.x, point.y];
                 let target: i32 = point.label;
                 p.train(inputs, target);
@@ -141,6 +129,7 @@ fn main() {
                 let color = if guess == target { [0.0, 1.0, 0.0, 1.0] } else { [1.0, 0.0, 0.0, 1.0] };
                 display.render_point(&args, point.x, point.y, 5.0, color);
             }
+
             eprintln!("Nb trains: {}", train_count);
             train_count += 1;
         }
